@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+*/node_modules/
+**/node_modules/
+
+# Production Builds & Cache
+dist/
+dist-ssr/
+client/dist/
+server/dist/
+**/dist/
+*.tsbuildinfo
+.eslintcache
+
+# Environment Variables & Local Secrets (Prevent committing DB credentials / keys)
+.env
+.env.*
+*.env
+*.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Runtime Uploads & Generated Receipts (keep directory structure with .gitkeep)
+server/uploads/*
+!server/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
+
+# System & OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs & Code Editors
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.sw?
+*.bak
+*.orig
+
+# Logs & Debug Output
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Database & Local Dumps
+*.sqlite
+*.sqlite3
+*.db
+*.sql.gz

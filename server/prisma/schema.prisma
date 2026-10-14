@@ -1,0 +1,200 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  RESIDENT
+  STAFF
+}
+
+enum ComplaintStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+enum ComplaintPriority {
+  LOW
+  MEDIUM
+  HIGH
+  EMERGENCY
+}
+
+enum DueStatus {
+  PENDING
+  SUBMITTED_FOR_VERIFICATION
+  PAID
+  OVERDUE
+}
+
+enum PaymentVerification {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum NoticePriority {
+  NORMAL
+  IMPORTANT
+  URGENT
+}
+
+enum OccupancyType {
+  OWNER
+  TENANT
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Flat {
+  id               String           @id @default(uuid())
+  unitNumber       String           @unique // e.g. "101", "102"
+  floorNumber      Int              // 1, 2, 3, 4
+  superBuiltUpSqFt Float            // e.g. 1150
+  carpetSqFt       Float?           // e.g. 920
+  occupancyType    OccupancyType    @default(OWNER)
+  occupantCount    Int              @default(1) // Total residents/tenants living in unit
+  resident         User?            @relation("PrimaryResident", fields: [residentId], references: [id])
+  residentId       String?          @unique
+  users            User[]           @relation("FlatUsers")
+  dues             MaintenanceDue[]
+  complaints       Complaint[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  phone          String?
+  fullName       String
+  passwordHash   String
+  role           Role           @default(RESIDENT)
+  occupancyType  OccupancyType  @default(OWNER)
+  approvalStatus ApprovalStatus @default(APPROVED)
+  isActive       Boolean        @default(true)
+  primaryFlat    Flat?          @relation("PrimaryResident")
+  flatId         String?
+  flat           Flat?          @relation("FlatUsers", fields: [flatId], references: [id])
+  complaints     Complaint[]    @relation("UserComplaints")
+  expenses       Expense[]      @relation("RecordedExpenses")
+  notices        Notice[]       @relation("AuthoredNotices")
+  verifiedPayments Payment[]    @relation("VerifiedPayments")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model MaintenanceConfig {
+  id                 String   @id @default(uuid())
+  baseFixedCharge    Decimal  @default(500.00) // Base common area charge (₹)
+  ratePerSqFt        Decimal  @default(2.50)   // ₹ per sq ft rate
+  dueDayOfMonth      Int      @default(5)      // 5th of every month
+  lateFeeFlat        Decimal  @default(100.00) // Late fee if after due date
+  bankAccountName    String   @default("Royal Orchid Apartment RWA")
+  bankAccountNumber   String   @default("923010049281729")
+  bankIfscCode       String   @default("HDFC0001234")
+  upiId              String   @default("royalorchid.rwa@hdfcbank")
+  updatedAt          DateTime @updatedAt
+}
+
+model MaintenanceDue {
+  id             String    @id @default(uuid())
+  flatId         String
+  flat           Flat      @relation(fields: [flatId], references: [id])
+  billingPeriod  String    // e.g. "2026-10"
+  sqFtRate       Decimal   // Snapshot of sqft rate
+  areaSqFt       Float     // Snapshot of area
+  fixedCharge    Decimal   // Snapshot of base fixed fee
+  variableCharge Decimal   // areaSqFt * sqFtRate
+  totalDue       Decimal   // fixedCharge + variableCharge
+  dueDate        DateTime
+  status         DueStatus @default(PENDING)
+  payment        Payment?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([flatId, billingPeriod])
+}
+
+model Payment {
+  id                 String              @id @default(uuid())
+  dueId              String              @unique
+  due                MaintenanceDue      @relation(fields: [dueId], references: [id])
+  amountPaid         Decimal
+  paymentMethod      String              @default("UPI") // "UPI", "NEFT", "CASH"
+  utrNumber          String              @unique // Bank UTR / Reference
+  proofImageUrl      String?             // Screenshot
+  verificationStatus PaymentVerification @default(PENDING)
+  receiptNumber      String?             @unique // e.g. "RCP-202610-201"
+  receiptPdfUrl      String?
+  paidAt             DateTime            @default(now())
+  verifiedAt         DateTime?
+  verifiedById       String?
+  verifiedBy         User?               @relation("VerifiedPayments", fields: [verifiedById], references: [id])
+  rejectionReason    String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model Expense {
+  id           String   @id @default(uuid())
+  title        String   // e.g. "Water Tanker (2 loads)"
+  category     String   // "WATER", "CLEANING", "ELECTRICITY", "REPAIRS", "LIFT_AMC", "MISC"
+  amount       Decimal
+  expenseDate  DateTime
+  vendorName   String?
+  billImageUrl String?
+  recordedById String
+  recordedBy   User     @relation("RecordedExpenses", fields: [recordedById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Complaint {
+  id                 String            @id @default(uuid())
+  ticketNumber       Int               @default(autoincrement())
+  flatId             String
+  flat               Flat              @relation(fields: [flatId], references: [id])
+  createdById        String
+  createdBy          User              @relation("UserComplaints", fields: [createdById], references: [id])
+  title              String
+  description        String
+  category           String            // "PLUMBING", "ELECTRICAL", "LIFT", "CLEANING", "TERRACE", "OTHER"
+  priority           ComplaintPriority @default(MEDIUM)
+  status             ComplaintStatus   @default(OPEN)
+  photoUrl           String?
+  resolutionPhotoUrl String?
+  preferredSlot      String?           // e.g. "Morning 10 AM - 12 PM"
+  assignedTo         String?           // e.g. "Ramesh (Electrician)"
+  resolutionNotes    String?
+  resolvedAt         DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model Notice {
+  id            String         @id @default(uuid())
+  title         String
+  content       String
+  category      String         // "WATER", "POWER", "MAINTENANCE", "MEETING", "GENERAL"
+  priority      NoticePriority @default(NORMAL)
+  pinned        Boolean        @default(false)
+  expiresAt     DateTime?
+  publishedById String
+  publishedBy   User           @relation("AuthoredNotices", fields: [publishedById], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}

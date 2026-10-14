@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Production Build
+dist/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Runtime Uploads & Receipts
+uploads/*
+!uploads/.gitkeep
+
+# Logs
+*.log
