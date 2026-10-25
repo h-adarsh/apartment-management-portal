@@ -25,6 +25,17 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
   next();
 }
 
+export function optionalAuth(req: AuthenticatedRequest, _res: Response, next: NextFunction): void {
+  const token = req.cookies?.token || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : null);
+  if (token) {
+    const decoded = verifyToken(token);
+    if (decoded) {
+      req.user = decoded;
+    }
+  }
+  next();
+}
+
 export function requireRole(allowedRoles: Role[]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {

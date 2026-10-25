@@ -93,6 +93,7 @@ model User {
   expenses       Expense[]      @relation("RecordedExpenses")
   notices        Notice[]       @relation("AuthoredNotices")
   verifiedPayments Payment[]    @relation("VerifiedPayments")
+  feedbacks      Feedback[]     @relation("UserFeedbacks")
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
@@ -198,3 +199,25 @@ model Notice {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
+
+enum FeedbackType {
+  BUG
+  FEATURE_REQUEST
+  USABILITY
+  GENERAL
+}
+
+model Feedback {
+  id         String       @id @default(uuid())
+  userId     String?
+  user       User?        @relation("UserFeedbacks", fields: [userId], references: [id])
+  name       String?
+  email      String?
+  rating     Int          // 1 to 5 stars
+  category   FeedbackType @default(GENERAL)
+  message    String
+  page       String?      // e.g. "Dues", "Complaints", "Dashboard"
+  deviceInfo String?      // e.g. "Mobile Chrome / iOS"
+  createdAt  DateTime     @default(now())
+}
+

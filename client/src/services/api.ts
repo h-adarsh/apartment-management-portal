@@ -6,19 +6,33 @@ import {
   Complaint,
   Notice,
   FlatItem,
-  FinancialSummary
+  FinancialSummary,
+  Feedback,
+  FeedbackSummary
 } from '../types';
 
-const BASE_URL = '/api/v1';
+export const API_ORIGIN = import.meta.env.VITE_API_URL || '';
+const BASE_URL = `${API_ORIGIN}/api/v1`;
+
+export function getFileUrl(path?: string | null): string {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return `${API_ORIGIN}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+export function getReceiptUrl(receiptNumber: string): string {
+  return `${BASE_URL}/finance/receipts/${receiptNumber}`;
+}
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const isFormData = options.body instanceof FormData;
-  const headers = isFormData
-    ? { ...(options.headers || {}) }
-    : {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      };
+  const token = localStorage.getItem('mygate_token');
+
+  const headers: Record<string, string> = {
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((options.headers as Record<string, string>) || {})
+  };
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
@@ -62,6 +76,16 @@ export const api = {
       request<{ success: boolean }>('/auth/logout', { method: 'POST' }),
     me: () =>
       request<{ success: boolean; user: User }>('/auth/me'),
+    updateProfile: (data: { fullName?: string; phone?: string }) =>
+      request<{ success: boolean; message: string; user: User }>('/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      }),
+    changePassword: (data: { currentPassword: string; newPassword: string }) =>
+      request<{ success: boolean; message: string }>('/auth/change-password', {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      }),
     getBuildingUnits: () =>
       request<{
         success: boolean;
@@ -184,6 +208,37 @@ export const api = {
       }),
     delete: (id: string) =>
       request<{ success: boolean; message: string }>('/notices/' + id, {
+        method: 'DELETE'
+      })
+  },
+
+  // Feedback
+  feedback: {
+    submit: (data: {
+      rating: number;
+      category: 'BUG' | 'FEATURE_REQUEST' | 'USABILITY' | 'GENERAL';
+      message: string;
+      page?: string;
+      deviceInfo?: string;
+      name?: string;
+      email?: string;
+    }) =>
+      request<{ success: boolean; feedback: Feedback; message: string }>('/feedback', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      }),
+    getAll: (params?: { category?: string; minRating?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.category) q.set('category', params.category);
+      if (params?.minRating) q.set('minRating', String(params.minRating));
+      return request<{
+        success: boolean;
+        summary: FeedbackSummary;
+        feedbacks: Feedback[];
+      }>(`/feedback?${q.toString()}`);
+    },
+    delete: (id: string) =>
+      request<{ success: boolean; message: string }>(`/feedback/${id}`, {
         method: 'DELETE'
       })
   }

@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Building2, LogOut, ChevronDown, Check } from 'lucide-react';
+import { Building2, LogOut, ChevronDown, Check, MessageSquarePlus, User as UserIcon } from 'lucide-react';
 import { ThemeToggle } from '../common/ThemeToggle';
 
 interface NavbarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  onOpenFeedback: () => void;
+  onOpenProfile: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  activeTab,
+  setActiveTab,
+  onOpenFeedback,
+  onOpenProfile
+}) => {
   const { user, logout, quickSwitchAccount } = useAuth();
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [switching, setSwitching] = useState(false);
-
 
   const demoAccounts = [
     { email: 'admin@mygate.local', label: 'Admin (Secretary)', role: 'ADMIN', unit: 'Building Admin' },
@@ -37,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'expenses', label: 'Expenses' },
     { id: 'notices', label: 'Notices' },
     { id: 'flats', label: 'Units Directory' },
+    ...(user?.role === 'ADMIN' ? [{ id: 'feedback', label: 'Tester Feedback' }] : [])
   ];
 
   return (
@@ -63,6 +70,27 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
 
           {/* User Controls */}
           <div className="flex items-center gap-2">
+            {/* Feedback Trigger Button */}
+            <button
+              type="button"
+              onClick={onOpenFeedback}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-amber-200 dark:border-amber-900/60 bg-amber-50/80 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-xs font-medium hover:bg-amber-100 dark:hover:bg-amber-900/50 transition shadow-xs"
+              title="Share feedback or report an issue"
+            >
+              <MessageSquarePlus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Feedback</span>
+            </button>
+
+            {/* Profile Button */}
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              className="p-1.5 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition shadow-xs"
+              title="Resident Profile & Security"
+            >
+              <UserIcon className="w-4 h-4" />
+            </button>
+
             {/* Theme Toggle Button */}
             <ThemeToggle />
 

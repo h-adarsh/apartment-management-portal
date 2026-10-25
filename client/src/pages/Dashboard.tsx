@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, getReceiptUrl } from '../services/api';
 import {
   MaintenanceDue,
   FinancialSummary,
@@ -195,7 +195,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
             <>
               {myDue.status === 'PAID' && myDue.payment?.receiptNumber ? (
                 <a
-                  href={`/api/v1/finance/receipts/${myDue.payment.receiptNumber}`}
+                  href={getReceiptUrl(myDue.payment.receiptNumber)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
                 >
                   <Download className="w-3.5 h-3.5" />

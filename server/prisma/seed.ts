@@ -7,7 +7,16 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seeding...');
 
-  // 1. Clear existing records safely
+  // 1. Safeguard against accidental wipe in production
+  const existingFlats = await prisma.flat.count();
+  if (existingFlats > 0 && process.env.FORCE_SEED !== 'true') {
+    console.log(`⚠️ Database already contains ${existingFlats} flats. Skipping seed to prevent accidental data loss.`);
+    console.log('💡 Set FORCE_SEED=true to reset and reseed all data.');
+    return;
+  }
+
+  // Clear existing records safely
+  await prisma.feedback.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.maintenanceDue.deleteMany();
   await prisma.complaint.deleteMany();

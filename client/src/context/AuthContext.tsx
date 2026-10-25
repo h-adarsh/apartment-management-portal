@@ -20,6 +20,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   quickSwitchAccount: (email: string, password: string) => Promise<void>;
   refreshUser: () => Promise<void>;
+  updateProfile: (data: { fullName?: string; phone?: string }) => Promise<void>;
+  changePassword: (data: { currentPassword: string; newPassword: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,9 +37,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(res.user);
       } else {
         setUser(null);
+        localStorage.removeItem('mygate_token');
       }
     } catch {
       setUser(null);
+      localStorage.removeItem('mygate_token');
     } finally {
       setLoading(false);
     }
@@ -50,6 +54,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     const res = await api.auth.login({ email, password });
     if (res.success && res.user) {
+      if (res.token) {
+        localStorage.setItem('mygate_token', res.token);
+      }
       setUser(res.user);
     }
   };
@@ -67,12 +74,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }) => {
     const res = await api.auth.register(data);
     if (res.success && res.user) {
+      if (res.token) {
+        localStorage.setItem('mygate_token', res.token);
+      }
       setUser(res.user);
     }
   };
 
   const logout = async () => {
-    await api.auth.logout();
+    try {
+      await api.auth.logout();
+    } catch {
+      // Ignore network errors on logout
+    }
+    localStorage.removeItem('mygate_token');
     setUser(null);
   };
 
@@ -80,6 +95,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     await login(email, password);
     setLoading(false);
+  };
+
+  const updateProfile = async (data: { fullName?: string; phone?: string }) => {
+    const res = await api.auth.updateProfile(data);
+    if (res.success && res.user) {
+      setUser(res.user);
+    }
+  };
+
+  const changePassword = async (data: { currentPassword: string; newPassword: string }) => {
+    await api.auth.changePassword(data);
   };
 
   return (
@@ -91,7 +117,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         quickSwitchAccount,
-        refreshUser
+        refreshUser,
+        updateProfile,
+        changePassword
       }}
     >
       {children}

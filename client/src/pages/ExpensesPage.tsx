@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, getFileUrl } from '../services/api';
 import { Expense, FinancialSummary } from '../types';
 import { AddExpenseModal } from '../components/finance/AddExpenseModal';
 import { Plus, ExternalLink } from 'lucide-react';
@@ -207,9 +207,9 @@ export const ExpensesPage: React.FC = () => {
                     <td className="py-2.5 px-3.5 text-right">
                       {e.billImageUrl ? (
                         <a
-                          href={e.billImageUrl}
+                          href={getFileUrl(e.billImageUrl)}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
                         >
                           <span>Bill</span>

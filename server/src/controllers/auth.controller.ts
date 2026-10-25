@@ -389,3 +389,86 @@ export async function getDemoAccounts(_req: Request, res: Response): Promise<voi
     res.status(500).json({ success: false, message: 'Failed to fetch demo accounts' });
   }
 }
+
+export async function updateProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    const { fullName, phone } = req.body;
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        fullName: fullName?.trim() || undefined,
+        phone: phone?.trim() || undefined
+      },
+      include: { flat: true }
+    });
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: updated.id,
+        email: updated.email,
+        fullName: updated.fullName,
+        phone: updated.phone,
+        role: updated.role,
+        occupancyType: updated.occupancyType,
+        approvalStatus: updated.approvalStatus,
+        flat: updated.flat
+      }
+    });
+  } catch (error) {
+    console.error('UpdateProfile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile' });
+  }
+}
+
+export async function changePassword(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ success: false, message: 'Current password and new password are required' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      res.status(400).json({ success: false, message: 'Incorrect current password' });
+      return;
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash }
+    });
+
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('ChangePassword error:', error);
+    res.status(500).json({ success: false, message: 'Failed to change password' });
+  }
+}
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, getReceiptUrl } from '../services/api';
 import { MaintenanceDue, MaintenanceConfig } from '../types';
 import { DueStatusBadge } from '../components/common/Badge';
 import { PayDueModal } from '../components/finance/PayDueModal';
@@ -178,7 +178,9 @@ export const DuesPage: React.FC = () => {
             <div className="flex items-center gap-2">
               {myFlatDue.status === 'PAID' && myFlatDue.payment?.receiptNumber && (
                 <a
-                  href={`/api/v1/finance/receipts/${myFlatDue.payment.receiptNumber}`}
+                  href={getReceiptUrl(myFlatDue.payment.receiptNumber)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -359,7 +361,9 @@ export const DuesPage: React.FC = () => {
                           </button>
                         ) : due.status === 'PAID' && due.payment?.receiptNumber ? (
                           <a
-                            href={`/api/v1/finance/receipts/${due.payment.receiptNumber}`}
+                            href={getReceiptUrl(due.payment.receiptNumber)}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:underline"
                           >
                             Receipt

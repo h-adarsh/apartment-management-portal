@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, getFileUrl } from '../services/api';
 import { Complaint } from '../types';
 import { ComplaintStatusBadge, PriorityBadge } from '../components/common/Badge';
 import { NewComplaintModal } from '../components/complaints/NewComplaintModal';
@@ -141,9 +141,9 @@ export const ComplaintsPage: React.FC = () => {
 
                     {c.photoUrl && (
                       <a
-                        href={c.photoUrl}
+                        href={getFileUrl(c.photoUrl)}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline pt-0.5"
                       >
                         <span>Attached Photo</span>

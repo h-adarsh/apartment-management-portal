@@ -178,3 +178,37 @@ export interface FinancialSummary {
   isAdmin?: boolean;
 }
 
+export type FeedbackType = 'BUG' | 'FEATURE_REQUEST' | 'USABILITY' | 'GENERAL';
+
+export interface Feedback {
+  id: string;
+  userId?: string | null;
+  name?: string | null;
+  email?: string | null;
+  rating: number;
+  category: FeedbackType;
+  message: string;
+  page?: string | null;
+  deviceInfo?: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    fullName: string;
+    email: string;
+    role: Role;
+    flat?: { unitNumber: string } | null;
+  } | null;
+}
+
+export interface FeedbackSummary {
+  totalCount: number;
+  avgRating: number;
+  categoryBreakdown: {
+    BUG: number;
+    FEATURE_REQUEST: number;
+    USABILITY: number;
+    GENERAL: number;
+  };
+}
+
+

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { MaintenanceDue } from '../../types';
-import { api } from '../../services/api';
+import { api, getFileUrl } from '../../services/api';
 import { AlertCircle, ExternalLink } from 'lucide-react';
 
 interface VerifyPaymentModalProps {
@@ -98,9 +98,9 @@ export const VerifyPaymentModal: React.FC<VerifyPaymentModalProps> = ({
           {due.payment.proofImageUrl && (
             <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
               <a
-                href={due.payment.proofImageUrl}
+                href={getFileUrl(due.payment.proofImageUrl)}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
               >
                 <span>View Uploaded Proof</span>
